@@ -9,38 +9,47 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
+import generateString from "./util/generateString";
 import db from "./firebase";
 import "./FirebaseExample.css";
 
-// Define the type for your items
-interface Item {
+// Define the type for your ShortenedUrl
+//
+//  - id: string
+//  - created at: Date
+//  - url hash: string
+//  - link url: string
+//
+
+interface ShortenedUrl {
   id: string;
-  name: string;
-  completed: boolean;
   createdAt: Date;
+  urlHash: string;
+  linkUrl: string;
 }
 
 function FirebaseExample() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [newItem, setNewItem] = useState<string>("");
+  const [urls, setUrls] = useState<ShortenedUrl[]>([]);
+  const [linkUrl, setLinkUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
   // Collection reference
-  const itemsCollection = collection(db, "items");
+  const dbName = "shortenedUrls";
+  const shortenedUrlsCollection = collection(db, dbName);
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchItems();
+    fetchShortenedUrls();
 
     // Optional: Set up real-time listener
-    const unsubscribe = onSnapshot(itemsCollection, (snapshot) => {
-      const itemsData: Item[] = snapshot.docs.map((doc) => ({
+    const unsubscribe = onSnapshot(shortenedUrlsCollection, (snapshot) => {
+      const itemsData: ShortenedUrl[] = snapshot.docs.map((doc) => ({
         id: doc.id,
-        name: doc.data().name,
-        completed: doc.data().completed,
         createdAt: doc.data().createdAt,
+        urlHash: doc.data().urlHash,
+        linkUrl: doc.data().linkUrl,
       }));
-      setItems(itemsData);
+      setUrls(itemsData);
     });
 
     // Cleanup listener on unmount
@@ -48,17 +57,19 @@ function FirebaseExample() {
   }, []);
 
   // Fetch all items
-  const fetchItems = async (): Promise<void> => {
+  const fetchShortenedUrls = async (): Promise<void> => {
     try {
       setLoading(true);
-      const querySnapshot = await getDocs(itemsCollection);
-      const itemsData: Item[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        completed: doc.data().completed,
-        createdAt: doc.data().createdAt,
-      }));
-      setItems(itemsData);
+      const querySnapshot = await getDocs(shortenedUrlsCollection);
+      const shortenedUrlsData: ShortenedUrl[] = querySnapshot.docs.map(
+        (doc) => ({
+          id: doc.id,
+          createdAt: doc.data().createdAt,
+          urlHash: doc.data().urlHash,
+          linkUrl: doc.data().linkUrl,
+        }),
+      );
+      setUrls(shortenedUrlsData);
     } catch (error) {
       console.error("Error fetching items:", error);
     } finally {
@@ -67,19 +78,19 @@ function FirebaseExample() {
   };
 
   // Add new item
-  const addItem = async (
+  const addShortenedUrl = async (
     e: React.MouseEvent | React.KeyboardEvent,
   ): Promise<void> => {
     e.preventDefault();
-    if (!newItem.trim()) return;
+    if (!linkUrl.trim()) return;
 
     try {
-      await addDoc(itemsCollection, {
-        name: newItem,
+      await addDoc(shortenedUrlsCollection, {
         createdAt: new Date(),
-        completed: false,
+        urlHash: generateString(7),
+        linkUrl: linkUrl,
       });
-      setNewItem("");
+      setLinkUrl("");
       console.log("Item added successfully!");
     } catch (error) {
       console.error("Error adding item:", error);
@@ -87,23 +98,24 @@ function FirebaseExample() {
   };
 
   // Update item
-  const updateItem = async (
-    id: string,
-    updates: Partial<Omit<Item, "id">>,
-  ): Promise<void> => {
-    try {
-      const itemDoc = doc(db, "items", id);
-      await updateDoc(itemDoc, updates);
-      console.log("Item updated successfully!");
-    } catch (error) {
-      console.error("Error updating item:", error);
-    }
-  };
+  // const updateItem = async (
+  //   id: string,
+  //   updates: Partial<Omit<Item, "id">>,
+  // ): Promise<void> => {
+  //   try {
+  //     const itemDoc = doc(db, "items", id);
+  //     await updateDoc(itemDoc, updates);
+  //     console.log("Item updated successfully!");
+  //   } catch (error) {
+  //     console.error("Error updating item:", error);
+  //   }
+  // };
+  //
 
   // Delete item
-  const deleteItem = async (id: string): Promise<void> => {
+  const deleteShortenedUrl = async (id: string): Promise<void> => {
     try {
-      const itemDoc = doc(db, "items", id);
+      const itemDoc = doc(db, dbName, id);
       await deleteDoc(itemDoc);
       console.log("Item deleted successfully!");
     } catch (error) {
@@ -113,20 +125,20 @@ function FirebaseExample() {
 
   return (
     <div className="firebase-container">
-      <h1 className="firebase-title">Firebase Todo List</h1>
+      <h1 className="firebase-title">Firebase Shortened URLs</h1>
 
       {/* Add Item Form */}
       <div className="add-item-form">
         <div className="input-group">
           <input
             type="text"
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="Enter new item..."
             className="item-input"
-            onKeyDown={(e) => e.key === "Enter" && addItem(e)}
+            onKeyDown={(e) => e.key === "Enter" && addShortenedUrl(e)}
           />
-          <button onClick={addItem} className="add-button">
+          <button onClick={addShortenedUrl} className="add-button">
             Add
           </button>
         </div>
@@ -137,28 +149,18 @@ function FirebaseExample() {
         <p className="loading-text">Loading...</p>
       ) : (
         <div className="items-container">
-          {items.length === 0 ? (
+          {urls.length === 0 ? (
             <p className="empty-message">No items yet. Add one above!</p>
           ) : (
-            items.map((item) => (
-              <div key={item.id} className="item-row">
-                <div className="item-content">
-                  <input
-                    type="checkbox"
-                    checked={item.completed || false}
-                    onChange={(e) =>
-                      updateItem(item.id, { completed: e.target.checked })
-                    }
-                    className="item-checkbox"
-                  />
-                  <span
-                    className={`item-text ${item.completed ? "completed" : ""}`}
-                  >
-                    {item.name}
-                  </span>
-                </div>
+            urls.map((url) => (
+              <div key={url.id} className="item-row">
+                <div className="item-content"></div>
+                <span>
+                  {url.urlHash} -{">"} {url.linkUrl}
+                </span>
+
                 <button
-                  onClick={() => deleteItem(item.id)}
+                  onClick={() => deleteShortenedUrl(url.id)}
                   className="delete-button"
                 >
                   Delete
@@ -169,7 +171,7 @@ function FirebaseExample() {
         </div>
       )}
 
-      <button onClick={fetchItems} className="refresh-button">
+      <button onClick={fetchShortenedUrls} className="refresh-button">
         Refresh Data
       </button>
     </div>
