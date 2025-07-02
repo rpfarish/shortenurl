@@ -1,12 +1,16 @@
 import { useState } from "react";
 import isValidURL from "./util/validateURL";
-import generateString from "./util/generateString";
 import "./Interface.css";
+import { addShortenedUrl } from "./firebaseAPI/database";
+import FirebaseCopyTextBox from "./CopyTextBox";
 
 const UrlInterface = () => {
   const [inputURL, setInputURL] = useState("");
-  const [shortenedURL, setShortenedURL] = useState("");
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [urlIsValid, setUrlIsValid] = useState(false);
+  const [urlHash, setUrlHash] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [prevUrl, setPrevUrl] = useState("");
   return (
     <div className="card">
       <div className="inputDiv">
@@ -17,18 +21,37 @@ const UrlInterface = () => {
           onChange={(e) => setInputURL(e.target.value)}
         />
         <button
-          onClick={() => {
-            setUrlIsValid(isValidURL(inputURL));
-            setShortenedURL(inputURL);
+          onClick={async (e) => {
+            setIsLoading(true);
+            const isValid = isValidURL(inputURL);
+            setUrlIsValid(isValid);
+            setHasGenerated(true);
+            if (!isValid) {
+              setIsLoading(false);
+              return;
+            } else if (prevUrl !== inputURL) {
+              const urlHash = await addShortenedUrl(e, inputURL);
+              setUrlHash(urlHash);
+            }
+            setPrevUrl(inputURL);
+            setIsLoading(false);
           }}
         >
           Generate
         </button>
       </div>
 
-      {shortenedURL &&
-        (urlIsValid ? <p>New URL: {shortenedURL}</p> : <p>Invalid URL</p>)}
-      <p>Random string: {generateString()}</p>
+      {!isLoading ? (
+        hasGenerated &&
+        (urlIsValid ? (
+          <p>New URL: localhost:5173/{urlHash}</p>
+        ) : (
+          <p>Invalid URL</p>
+        ))
+      ) : (
+        <p>Loading...</p>
+      )}
+      <FirebaseCopyTextBox />
     </div>
   );
 };
