@@ -8,7 +8,7 @@ const FirebaseCopyTextBox = ({ urlHash }: CopyTextBoxProps) => {
   const [copied, setCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const textToCopy = urlHash;
+  const textToCopy = urlHash ? urlHash : "Loading...";
 
   const handleCopy = async () => {
     try {

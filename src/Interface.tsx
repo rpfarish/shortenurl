@@ -27,14 +27,17 @@ const UrlInterface = () => {
             const isValid = isValidURL(inputURL);
             setUrlIsValid(isValid);
             setHasGenerated(true);
-            if (!isValid) {
+            if (prevUrl === inputURL) {
               setIsLoading(false);
               return;
-            } else if (prevUrl !== inputURL) {
-              const urlHash = await addShortenedUrl(e, inputURL);
-              setUrlHash(urlHash);
             }
-            setPrevUrl(inputURL);
+            if (isValid && prevUrl !== inputURL) {
+              setPrevUrl(inputURL);
+              const urlHash = await addShortenedUrl(e, inputURL);
+              const urlHashDomain =
+                "https://rpfarish.github.io/shortenurl/#/" + urlHash;
+              setUrlHash(urlHashDomain);
+            }
             setIsLoading(false);
           }}
         >
@@ -49,9 +52,7 @@ const UrlInterface = () => {
         <p>Loading...</p>
       )}
       {!isLoading && hasGenerated && urlIsValid && (
-        <FirebaseCopyTextBox
-          urlHash={"https://rpfarish.github.io/shortenurl/#/" + urlHash}
-        />
+        <FirebaseCopyTextBox urlHash={urlHash} />
       )}
     </div>
   );
