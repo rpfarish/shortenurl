@@ -10,6 +10,7 @@ export const firebaseConfig = {
 };
 
 export const databaseName = import.meta.env.VITE_FIREBASE_DATABASE_NAME;
+export const url_domain = import.meta.env.VITE_URL_DOMAIN;
 
 // Type definition for the config (optional but recommended)
 export interface FirebaseConfig {
@@ -32,6 +33,7 @@ const requiredEnvVars = [
   "VITE_FIREBASE_APP_ID",
   "VITE_FIREBASE_MEASUREMENT_ID",
   "VITE_FIREBASE_DATABASE_NAME",
+  "VITE_URL_DOMAIN",
 ];
 
 const missingEnvVars = requiredEnvVars.filter(

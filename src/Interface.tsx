@@ -3,6 +3,9 @@ import isValidURL from "./util/validateURL";
 import "./Interface.css";
 import { addShortenedUrl } from "./firebaseAPI/database";
 import FirebaseCopyTextBox from "./CopyTextBox";
+import { url_domain } from "./firebaseConfig";
+
+console.log("url_domain", url_domain);
 
 const UrlInterface = () => {
   const [inputURL, setInputURL] = useState("");
@@ -47,11 +50,10 @@ const UrlInterface = () => {
         <p>Loading...</p>
       )}
       {!isLoading && hasGenerated && (
-        <FirebaseCopyTextBox
-          urlHash={"http://localhost:5173/shortenurl/#/" + urlHash}
-        />
+        <FirebaseCopyTextBox urlHash={url_domain + "#/" + urlHash} />
       )}
     </div>
   );
 };
+
 export default UrlInterface;
