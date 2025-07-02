@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import {
   collection,
   addDoc,
+  runTransaction,
+  setDoc,
   getDocs,
   doc,
   updateDoc,
@@ -10,15 +12,31 @@ import {
 } from "firebase/firestore";
 
 import generateString from "./util/generateString";
+import isValidURL from "./util/validateURL";
 import db from "./firebase";
 import "./FirebaseExample.css";
+import { toHttpsUrl } from "./util/toHTTPSURL";
 
+async function resolveSlug(slug: string): Promise<string | null> {
+  // 🔑 Replace this with your DB lookup (Firestore, Supabase, etc.)
+  // For example, Firestore:
+  //
+  // const snap = await getDoc(doc(db, "shortUrls", slug));
+  // return snap.exists() ? snap.data().longUrl : null;
+  //
+  return null;
+}
 // Define the type for your ShortenedUrl
+//
 //
 //  - id: string
 //  - created at: Date
 //  - url hash: string
 //  - link url: string
+//
+//
+//  add, fetch, useEffect
+//  interface
 //
 
 interface ShortenedUrl {
@@ -43,12 +61,15 @@ function FirebaseExample() {
 
     // Optional: Set up real-time listener
     const unsubscribe = onSnapshot(shortenedUrlsCollection, (snapshot) => {
-      const itemsData: ShortenedUrl[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        createdAt: doc.data().createdAt,
-        urlHash: doc.data().urlHash,
-        linkUrl: doc.data().linkUrl,
-      }));
+      const itemsData: ShortenedUrl[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          createdAt: data.createdAt,
+          urlHash: data.urlHash,
+          linkUrl: data.linkUrl,
+        };
+      });
       setUrls(itemsData);
     });
 
@@ -78,25 +99,61 @@ function FirebaseExample() {
   };
 
   // Add new item
+  const MAX_TRIES = 5; // how many hashes we’ll try before giving up
+
   const addShortenedUrl = async (
     e: React.MouseEvent | React.KeyboardEvent,
   ): Promise<void> => {
     e.preventDefault();
     if (!linkUrl.trim()) return;
+    if (!isValidURL(linkUrl)) {
+      console.log("invalid url", linkUrl);
+    }
+    const linkUrlHTTPS = toHttpsUrl(linkUrl);
+    console.log("new https url", linkUrlHTTPS);
 
     try {
-      await addDoc(shortenedUrlsCollection, {
-        createdAt: new Date(),
-        urlHash: generateString(7),
-        linkUrl: linkUrl,
-      });
-      setLinkUrl("");
-      console.log("Item added successfully!");
+      let tries = 0;
+      let saved = false;
+
+      while (!saved && tries < MAX_TRIES) {
+        const urlHash = generateString(7);
+        const docRef = doc(shortenedUrlsCollection, urlHash);
+
+        try {
+          // 🚦 transaction = atomic “check‑then‑set”
+          await runTransaction(db, async (tx) => {
+            const snap = await tx.get(docRef);
+
+            if (snap.exists()) {
+              throw new Error("collision"); // same hash already in use
+            }
+
+            tx.set(docRef, {
+              createdAt: new Date(), // keep Date object
+              urlHash: urlHash, // keep field
+              linkUrl: linkUrlHTTPS,
+            });
+          });
+
+          // if we get here, the write succeeded
+          saved = true;
+          setLinkUrl("");
+          console.log("Item added successfully!");
+          console.log("Saved under ID:", urlHash);
+        } catch (err: any) {
+          if (err.message !== "collision") throw err; // real error – abort
+          tries += 1; // hash collision – try again
+        }
+      }
+
+      if (!saved) {
+        console.error(`Failed after ${MAX_TRIES} collisions – please retry.`);
+      }
     } catch (error) {
       console.error("Error adding item:", error);
     }
   };
-
   // Update item
   // const updateItem = async (
   //   id: string,
