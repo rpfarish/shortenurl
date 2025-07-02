@@ -9,6 +9,8 @@ export const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+export const databaseName = import.meta.env.VITE_FIREBASE_DATABASE_NAME;
+
 // Type definition for the config (optional but recommended)
 export interface FirebaseConfig {
   apiKey: string;
@@ -29,6 +31,7 @@ const requiredEnvVars = [
   "VITE_FIREBASE_MESSAGING_SENDER_ID",
   "VITE_FIREBASE_APP_ID",
   "VITE_FIREBASE_MEASUREMENT_ID",
+  "VITE_FIREBASE_DATABASE_NAME",
 ];
 
 const missingEnvVars = requiredEnvVars.filter(

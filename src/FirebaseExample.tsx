@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   collection,
-  addDoc,
   runTransaction,
-  setDoc,
   getDocs,
   doc,
-  updateDoc,
   deleteDoc,
   onSnapshot,
 } from "firebase/firestore";
@@ -16,16 +13,8 @@ import isValidURL from "./util/validateURL";
 import db from "./firebase";
 import "./FirebaseExample.css";
 import { toHttpsUrl } from "./util/toHTTPSURL";
+import { databaseName } from "./firebaseConfig";
 
-async function resolveSlug(slug: string): Promise<string | null> {
-  // 🔑 Replace this with your DB lookup (Firestore, Supabase, etc.)
-  // For example, Firestore:
-  //
-  // const snap = await getDoc(doc(db, "shortUrls", slug));
-  // return snap.exists() ? snap.data().longUrl : null;
-  //
-  return null;
-}
 // Define the type for your ShortenedUrl
 //
 //
@@ -52,7 +41,7 @@ function FirebaseExample() {
   const [loading, setLoading] = useState<boolean>(false);
 
   // Collection reference
-  const dbName = "shortenedUrls";
+  const dbName = databaseName;
   const shortenedUrlsCollection = collection(db, dbName);
 
   // Fetch data on component mount
@@ -108,6 +97,7 @@ function FirebaseExample() {
     if (!linkUrl.trim()) return;
     if (!isValidURL(linkUrl)) {
       console.log("invalid url", linkUrl);
+      return;
     }
     const linkUrlHTTPS = toHttpsUrl(linkUrl);
     console.log("new https url", linkUrlHTTPS);
