@@ -42,16 +42,13 @@ const UrlInterface = () => {
       </div>
 
       {!isLoading ? (
-        hasGenerated &&
-        (urlIsValid ? (
-          <p>New URL: localhost:5173/{urlHash}</p>
-        ) : (
-          <p>Invalid URL</p>
-        ))
+        hasGenerated && (urlIsValid ? <p></p> : <p>Invalid URL</p>)
       ) : (
         <p>Loading...</p>
       )}
-      <FirebaseCopyTextBox />
+      {!isLoading && hasGenerated && (
+        <FirebaseCopyTextBox urlHash={"localhost:5173/" + urlHash} />
+      )}
     </div>
   );
 };
