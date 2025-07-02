@@ -13,6 +13,7 @@ const UrlInterface = () => {
   const [prevUrl, setPrevUrl] = useState("");
   return (
     <div className="card">
+      <p>Enter your destination URL</p>
       <div className="inputDiv">
         <input
           className="urlInput"
@@ -42,11 +43,12 @@ const UrlInterface = () => {
       </div>
 
       {!isLoading ? (
-        hasGenerated && (urlIsValid ? <p></p> : <p>Invalid URL</p>)
+        hasGenerated &&
+        (urlIsValid ? <p></p> : <p className="invalidUrl">Invalid URL</p>)
       ) : (
         <p>Loading...</p>
       )}
-      {!isLoading && hasGenerated && (
+      {!isLoading && hasGenerated && urlIsValid && (
         <FirebaseCopyTextBox
           urlHash={"https://rpfarish.github.io/shortenurl/#/" + urlHash}
         />
