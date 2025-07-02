@@ -59,9 +59,9 @@ function RedirectSlug() {
 export default function App() {
   return (
     <Routes>
-      <Route path="shortenurl/" element={<Home />} />
-      <Route path="shortenurl/:slug" element={<RedirectSlug />} />
-      <Route path="shortenurl/*" element={<Home />} /> {/* fallback / 404 */}
+      <Route path="/" element={<Home />} />
+      <Route path=":slug" element={<RedirectSlug />} />
+      <Route path="*" element={<p>Not Found</p>} /> {/* fallback / 404 */}
     </Routes>
   );
 }

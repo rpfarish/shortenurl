@@ -47,7 +47,9 @@ const UrlInterface = () => {
         <p>Loading...</p>
       )}
       {!isLoading && hasGenerated && (
-        <FirebaseCopyTextBox urlHash={"localhost:5173/" + urlHash} />
+        <FirebaseCopyTextBox
+          urlHash={"http://localhost:5173/shortenurl/#/" + urlHash}
+        />
       )}
     </div>
   );
